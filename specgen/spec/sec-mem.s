@@ -475,7 +475,7 @@ the same syntax.}
 @syntax[:name "Classical Binary"]{
          MOVE @alt EXCHANGE @alt CONVERT
     @alt AND @alt IOR @alt XOR
-    @alt SHIFT-LEFT @alt SHIFT-RIGHT @alt ARITHMETIC-SHIFT-RIGHT
+    @alt SHL @alt SHR @alt ASHR
     @alt ADD @alt SUB @alt MUL @alt DIV
 }
 
@@ -522,106 +522,118 @@ INSTR   a b             # Pseudocode meaning
 @clist{
 # Move like-typed data to different locations.
 # Also allows loading immediate values.
-MOVE                   a b            # a := b; Store contents of b at a
-                       <oct> <!int>
-                       <oct> <oct>
-                       <int> <!int>
-                       <int> <int>
-                       <real> <!real>
-                       <real> <real>
-                       <bit> <!int>
-                       <bit> <bit>
+MOVE     a b            # a := b; Store contents of b at a
+         <oct> <!int>
+         <oct> <oct>
+         <int> <!int>
+         <int> <int>
+         <real> <!real>
+         <real> <real>
+         <bit> <!int>
+         <bit> <bit>
 
 # Exchange the value at two like-typed locations.
-EXCHANGE               a b            # Exchange contents of a and b; a <=> b
-                       <oct> <oct>
-                       <int> <int>
-                       <real> <real>
-                       <bit> <bit>
+EXCHANGE a b            # Exchange contents of a and b; a <=> b
+         <oct> <oct>
+         <int> <int>
+         <real> <real>
+         <bit> <bit>
 
 # Perform an indirect load from x offset by n to a.
 LOAD     a x n          # a := x[n]
-                       <oct> <oct*> <int>
-                       <int> <int*> <int>
-                       <real> <real*> <int>
-                       <bit> <bit*> <int>
+         <oct> <oct*> <int>
+         <int> <int*> <int>
+         <real> <real*> <int>
+         <bit> <bit*> <int>
 
 # Perform an indirect store of a to x offset by n.
 STORE    x n a          # x[n] := a
-                       <oct*> <int> <oct>
-                       <oct*> <int> <!int>
-                       <int*> <int> <int>
-                       <int*> <int> <!int>
-                       <real*> <int> <real>
-                       <real*> <int> <!real>
-                       <bit*> <int> <bit>
-                       <bit*> <int> <!int>
+         <oct*> <int> <oct>
+         <oct*> <int> <!int>
+         <int*> <int> <int>
+         <int*> <int> <!int>
+         <real*> <int> <real>
+         <real*> <int> <!real>
+         <bit*> <int> <bit>
+         <bit*> <int> <!int>
 
 # Perform a move of differently typed data.
 # The data here is interpreted numerically.
-CONVERT                a b            # a := (T)b, where T = type-of(a)
-                       <int> <real>   # - Best integer approximation of a real.
-                       <int> <bit>    # - Convert 0 or 1 to an integer.
-                       <real> <int>   # - Best real approximation of an integer.
-                       <real> <bit>   # - Convert 0 or 1 to a real.
-                       <bit> <int>    # - 0 if 0, 1 if non-zero.
-                       <bit> <real>   # - 0 if 0.0, 1 if non-zero
+CONVERT  a b            # a := (T)b, where T = type-of(a)
+         <int> <real>   # - Best integer approximation of a real.
+         <int> <bit>    # - Convert 0 or 1 to an integer.
+         <real> <int>   # - Best real approximation of an integer.
+         <real> <bit>   # - Convert 0 or 1 to a real.
+         <bit> <int>    # - 0 if 0, 1 if non-zero.
+         <bit> <real>   # - 0 if 0.0, 1 if non-zero
 
 # Logical Operations
 NOT      a              # a := ~a
-                       <oct>
-                       <int>
-                       <bit>
+         <oct>
+         <int>
+         <bit>
 
-AND                    a b            # a := a & b
-IOR                    a b            # a := a | b
-XOR                    a b            # a := a ^ b
- bit
-                       <oct> <oct>
-                       <oct> <!int>
-                       <int> <int>
-                       <int> <!int>
-                       <bit> <bit>
-                       <bit> <!int>
+AND      a b            # a := a & b
+IOR      a b            # a := a | b
+XOR      a b            # a := a ^ b
+         <oct> <oct>
+         <oct> <!int>
+         <int> <int>
+         <int> <!int>
+         <bit> <bit>
+         <bit> <!int>
 
 # Bitshifts
-# Shifting by a negative number of bits is forbidden.
-# Shifting by as many or more bits than are present in a word fills
-# the entire word with the bit being shifted in.
-SHIFT-LEFT             a b            # a := a << b; shift the bits of a left by b bits,
-                                      # filling in 0s
-SHIFT-RIGHT            a b            # a := a >> b; shift the bits of a right by b bits
-                                      # filling in 0s
-ARITHMETIC-SHIFT-RIGHT a b            # a := a >>> b; shift the bits of a right by b bits,
-                                      # preserving the high bit
+#
+# - Shifting by a negative number of bits is forbidden.
+#
+# - Shifting by as many or more bits than are present in a word fills
+#   the entire word with the bit being shifted in.
+#
+# - SHL and SHR are "logical shifts", and fill in the shifted-out bits
+#   with zeros.
+#
+# - ASHR is an "arithmetic shift", and is the same as n := n * 2⁻ᵏ
+#   (rounding towards -∞); in a 2's-complement representation, this is
+#   the same as shifting right and filling in the shifted-out bits
+#   with the original value of the high bit.
+SHL      n b            # n := n << b; shift left (logical)
+SHR      n b            # n := n >> b; shift right (logical)
+ASHR     n b            # n := n * 2⁻ᵏ, or n := n >>> b; arithmetic shift right
+         <oct> <oct>
+         <oct> <int>
+         <oct> <!int>
+         <int> <oct>
+         <int> <int>
+         <int> <!int>
 
 # Arithmetic Operations
-NEG                    a # a := -a
-                       <int>
-                       <real>
+NEG      a              # a := -a
+         <int>
+         <real>
 
-ADD                    a b            # a := a + b
-SUB                    a b            # a := a - b
-MUL                    a b            # a := a * b
-DIV                    a b            # a := a / b
-                       <int> <int>
-                       <int> <!int>
-                       <real> <!real>
-                       <real> <real>
+ADD      a b            # a := a + b
+SUB      a b            # a := a - b
+MUL      a b            # a := a * b
+DIV      a b            # a := a / b
+         <int> <int>
+         <int> <!int>
+         <real> <!real>
+         <real> <real>
 
 # Comparison
-EQ                     r a b          # r := (a == b)
-GT                     r a b          # r := (a > b)
-GE                     r a b          # r := (a >= b)
-LT                     r a b          # r := (a < b)
-LE                     r a b          # r := (a <= b)
-                       <bit> <bit> <bit>
-                       <bit> <bit> <!int>
-                       <bit> <oct> <oct>
-                       <bit> <oct> <!int>
-                       <bit> <int> <int>
-                       <bit> <int> <!int>
-                       <bit> <real> <real>
-                       <bit> <real> <!real>
+EQ       r a b          # r := (a == b)
+GT       r a b          # r := (a > b)
+GE       r a b          # r := (a >= b)
+LT       r a b          # r := (a < b)
+LE       r a b          # r := (a <= b)
+         <bit> <bit> <bit>
+         <bit> <bit> <!int>
+         <bit> <oct> <oct>
+         <bit> <oct> <!int>
+         <bit> <int> <int>
+         <bit> <int> <!int>
+         <bit> <real> <real>
+         <bit> <real> <!real>
 }
 
